@@ -13,6 +13,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar mToolBar;
     private FirebaseAuth mAuth;
 
+    private ImageButton AddNewPostButton;
+
     private CircleImageView NavProfileImage;
     private TextView NavProfileUserName;
 
@@ -49,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
         mAuth=FirebaseAuth.getInstance();
         currentUserID = mAuth.getCurrentUser().getUid();
         UsersRef = FirebaseDatabase.getInstance().getReference().child("Users");
+
+        AddNewPostButton = (ImageButton) findViewById(R.id.add_new_post_button);
 
         mToolBar =  findViewById(R.id.main_page_toolbar);
         setSupportActionBar(mToolBar);
@@ -102,8 +107,21 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+        AddNewPostButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                SendUserToPostActivity();
+            }
+        });
 
     }
+
+    private void SendUserToPostActivity() {
+        Intent addNewPostIntent = new Intent(MainActivity.this, PostActivity.class);
+        startActivity(addNewPostIntent);
+    }
+
     protected void onStart(){
         super.onStart();
         FirebaseUser currentUser=mAuth.getCurrentUser();
@@ -162,6 +180,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void UserMenuSelector(MenuItem item) {
         switch (item.getItemId()){
+            case R.id.nav_post:
+                SendUserToPostActivity();
+                break;
             case R.id.nav_profile:
                 Toast.makeText(this,"Profile",Toast.LENGTH_SHORT).show();
                 break;
