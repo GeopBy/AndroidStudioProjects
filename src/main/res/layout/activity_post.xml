@@ -26,7 +26,7 @@
         android:layout_marginBottom="147dp"
         android:background="@drawable/inputs"
         android:ems="10"
-        android:hint="write something about @string/crop_image_activity_no_permissions"
+        android:hint="write something about image"
         android:inputType="textPersonName" />
 
     <Button
