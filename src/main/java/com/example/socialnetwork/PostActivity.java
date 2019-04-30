@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,18 +19,24 @@ import android.widget.Toast;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 
 
 public class PostActivity extends AppCompatActivity {
     private Toolbar mToolbar;
+    private ProgressDialog loadingBar;
+
     private ImageButton SelectPostImage;
     private Button UpdatePostButton;
     private EditText PostDescription;
@@ -48,6 +55,9 @@ public class PostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post);
 
+        mAuth = FirebaseAuth.getInstance();
+        current_user_id = mAuth.getCurrentUser().getUid();
+
         PostsImagesRefrence = FirebaseStorage.getInstance().getReference();
         UsersRef = FirebaseDatabase.getInstance().getReference().child("Users");
         PostsRef = FirebaseDatabase.getInstance().getReference().child("Posts");
@@ -55,6 +65,7 @@ public class PostActivity extends AppCompatActivity {
         SelectPostImage = (ImageButton) findViewById(R.id.select_post_image);
         UpdatePostButton = (Button) findViewById(R.id.update_post_button);
         PostDescription =(EditText) findViewById(R.id.post_description);
+        loadingBar = new ProgressDialog(this);
         mToolbar =  findViewById(R.id.update_post_page_toolbar);
 
         setSupportActionBar(mToolbar);
@@ -86,10 +97,10 @@ public class PostActivity extends AppCompatActivity {
         } else if (TextUtils.isEmpty(Description)) {
             Toast.makeText(this, "Please say something about your image...", Toast.LENGTH_SHORT).show();
         } else {
-//            loadingBar.setTitle("Add New Post");
-//            loadingBar.setMessage("Please wait, while we are updating your new post...");
-//            loadingBar.show();
-//            loadingBar.setCanceledOnTouchOutside(true);
+            loadingBar.setTitle("Add New Post");
+            loadingBar.setMessage("Please wait, while we are updating your new post...");
+            loadingBar.show();
+            loadingBar.setCanceledOnTouchOutside(true);
 
             StoringImageToFirebaseStorage();
         }
@@ -115,9 +126,10 @@ public class PostActivity extends AppCompatActivity {
             {
                 if(task.isSuccessful())
                 {
+                    downloadUrl = task.getResult().getStorage().getDownloadUrl().toString();
                     Toast.makeText(PostActivity.this, "image uploaded successfully to Storage...", Toast.LENGTH_SHORT).show();
 
-
+                    SavingPostInformationToDatabase();
 
                 }
                 else
@@ -127,6 +139,53 @@ public class PostActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void SavingPostInformationToDatabase() {
+        UsersRef.child(current_user_id).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                if(dataSnapshot.exists())
+                {
+                    String userFullName = dataSnapshot.child("fullname").getValue().toString();
+                    String userProfileImage = dataSnapshot.child("profileimage").getValue().toString();
+
+                    HashMap postsMap = new HashMap();
+                    postsMap.put("uid", current_user_id);
+                    postsMap.put("date", saveCurrentDate);
+                    postsMap.put("time", saveCurrentTime);
+                    postsMap.put("description", Description);
+                    postsMap.put("postimage", downloadUrl);
+                    postsMap.put("profileimage", userProfileImage);
+                    postsMap.put("fullname", userFullName);
+                    PostsRef.child(current_user_id + postRandomName).updateChildren(postsMap)
+                            .addOnCompleteListener(new OnCompleteListener() {
+                                @Override
+                                public void onComplete(@NonNull Task task)
+                                {
+                                    if(task.isSuccessful())
+                                    {
+                                        SendUserToMainActivity();
+                                        Toast.makeText(PostActivity.this, "New Post is updated successfully.", Toast.LENGTH_SHORT).show();
+                                        loadingBar.dismiss();
+                                    }
+                                    else
+                                    {
+                                        Toast.makeText(PostActivity.this, "Error Occured while updating your post.", Toast.LENGTH_SHORT).show();
+                                        loadingBar.dismiss();
+                                    }
+                                }
+                            });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
     private void OpenGallery() {
