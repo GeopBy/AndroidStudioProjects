@@ -1,19 +1,28 @@
 package com.example.socialnetwork;
 
+import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.NonNull;
+
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.material.navigation.NavigationView;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.Toolbar;
 import de.hdodenhof.circleimageview.CircleImageView;
 
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         mAuth=FirebaseAuth.getInstance();
         currentUserID = mAuth.getCurrentUser().getUid();
         UsersRef = FirebaseDatabase.getInstance().getReference().child("Users");
+        PostsRef = FirebaseDatabase.getInstance().getReference().child("Posts");
 
         AddNewPostButton = (ImageButton) findViewById(R.id.add_new_post_button);
 
@@ -66,6 +76,12 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         navigationView = findViewById(R.id.navigation_view);
 
+        postList = (RecyclerView) findViewById(R.id.all_users_post_list);
+        postList.setHasFixedSize(true);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setReverseLayout(true);
+        linearLayoutManager.setStackFromEnd(true);
+        postList.setLayoutManager(linearLayoutManager);
 
         View navView=navigationView.inflateHeaderView(R.layout.navigation_header);
         NavProfileImage = (CircleImageView) navView.findViewById(R.id.nav_profile_image);
@@ -114,8 +130,78 @@ public class MainActivity extends AppCompatActivity {
                 SendUserToPostActivity();
             }
         });
+        DisplayAllUsersPosts();
 
     }
+
+    //hiển thị bảng tin
+    private void DisplayAllUsersPosts() {
+
+        FirebaseRecyclerOptions<Posts> options = new FirebaseRecyclerOptions.Builder<Posts>().setQuery(PostsRef, Posts.class).build();
+        FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<Posts, PostsViewHolder>(options) {
+            @Override
+            protected void onBindViewHolder(@NonNull PostsViewHolder postsViewHolder, int position, @NonNull Posts posts) {
+                postsViewHolder.setFullname(posts.getFullname());
+                postsViewHolder.setDescription(posts.getDescription());
+                postsViewHolder.setProfileImage(getApplicationContext(),posts.getProfileimage());
+                postsViewHolder.setPostImage(getApplicationContext(),posts.getPostimage());
+                postsViewHolder.setDate(posts.getDate());
+                postsViewHolder.SetTime(posts.getTime());
+            }
+
+            @NonNull
+            @Override
+            public PostsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View view = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.all_posts_layout,parent,false);
+                return new PostsViewHolder(view);
+            }
+        };
+        adapter.startListening();
+        postList.setAdapter(adapter);
+    }
+    //lấy dữ liệu từ bảng tin để hiển thị lên
+    public static class PostsViewHolder extends RecyclerView.ViewHolder {
+
+        View mView;
+
+        public PostsViewHolder(@NonNull View itemView) {
+            super(itemView);
+            mView = itemView;
+        }
+
+        public void setFullname (String fullname){
+            TextView username = (TextView) mView.findViewById(R.id.post_user_name);
+            username.setText(fullname);
+        }
+
+        public void setProfileImage (Context ctx, String profileimage){
+           CircleImageView image = (CircleImageView) mView.findViewById(R.id.post_profile_image);
+           Picasso.get().load(profileimage).into(image);
+        }
+
+        public void SetTime (String time){
+            TextView PostTime = (TextView) mView.findViewById(R.id.post_time);
+            PostTime.setText("     "+time);
+        }
+
+        public void setDate (String date){
+            TextView postDate = (TextView) mView.findViewById(R.id.post_date);
+            postDate.setText("     "+date);
+        }
+
+        public void setDescription (String description){
+            TextView postDescription = (TextView) mView.findViewById(R.id.post_description);
+            postDescription.setText(description);
+        }
+
+        public void setPostImage (Context ctx1, String postImage){
+            ImageView postImages = (ImageView) mView.findViewById(R.id.post_image);
+            Picasso.get().load(postImage).into(postImages);
+        }
+
+    }
+
 
     private void SendUserToPostActivity() {
         Intent addNewPostIntent = new Intent(MainActivity.this, PostActivity.class);
