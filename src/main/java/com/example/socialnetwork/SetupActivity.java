@@ -55,11 +55,11 @@ public class SetupActivity extends AppCompatActivity {
         UsersRef = FirebaseDatabase.getInstance().getReference().child("Users").child(currentUserID);
         UserProfileImageRef = FirebaseStorage.getInstance().getReference().child("Profile Images");
 
-        UserName = (EditText) findViewById(R.id.setup_username);
-        FullName = (EditText) findViewById(R.id.setup_full_name);
-        CountryName = (EditText) findViewById(R.id.setup_country_name);
-        SaveInformationbuttion = (Button) findViewById(R.id.setup_information_button);
-        ProfileImage = (CircleImageView) findViewById(R.id.setup_profile_image);
+        UserName = findViewById(R.id.setup_username);
+        FullName =  findViewById(R.id.setup_full_name);
+        CountryName =  findViewById(R.id.setup_country_name);
+        SaveInformationbuttion =  findViewById(R.id.setup_information_button);
+        ProfileImage =  findViewById(R.id.setup_profile_image);
         loadingBar = new ProgressDialog(this);
 
         SaveInformationbuttion.setOnClickListener(new View.OnClickListener() {
@@ -89,7 +89,11 @@ public class SetupActivity extends AppCompatActivity {
                     if (dataSnapshot.hasChild("profileimage"))
                     {
                         String image = dataSnapshot.child("profileimage").getValue().toString();
-                        Picasso.get().load(image).placeholder(R.drawable.profile).into(ProfileImage);
+                        Picasso.get()
+                                .load(image)
+                                .placeholder(R.drawable.profile)
+                                .into(ProfileImage);
+
                     }
                     else
                     {
@@ -138,40 +142,42 @@ public class SetupActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull final Task<UploadTask.TaskSnapshot> task)
                     {
-                        if(task.isSuccessful())
-                        {
+                        if(task.isSuccessful()) {
+
                             Toast.makeText(SetupActivity.this, "Profile Image stored successfully to Firebase storage...", Toast.LENGTH_SHORT).show();
 
-                            final String downloadUrl = task.getResult().getStorage().getDownloadUrl().toString();
+                            Task<Uri> result = task.getResult().getMetadata().getReference().getDownloadUrl();
 
-                            UsersRef.child("profileimage").setValue(downloadUrl)
-                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task)
-                                        {
-                                            if(task.isSuccessful())
-                                            {
-                                                Intent selfIntent = new Intent(SetupActivity.this, SetupActivity.class);
-                                                startActivity(selfIntent);
+                            result.addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                @Override
+                                public void onSuccess(Uri uri) {
+                                    final String downloadUrl = uri.toString();
 
-                                                Toast.makeText(SetupActivity.this, "Profile Image stored to Firebase Database Successfully...", Toast.LENGTH_SHORT).show();
-                                                loadingBar.dismiss();
-                                            }
-                                            else
-                                            {
-                                                String message = task.getException().getMessage();
-                                                Toast.makeText(SetupActivity.this, "Error Occured: " + message, Toast.LENGTH_SHORT).show();
-                                                loadingBar.dismiss();
-                                            }
-                                        }
-                                    });
+                                    UsersRef.child("profileimage").setValue(downloadUrl)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        Intent selfIntent = new Intent(SetupActivity.this, SetupActivity.class);
+                                                        startActivity(selfIntent);
+
+                                                        Toast.makeText(SetupActivity.this, "Profile Image stored to Firebase Database Successfully...", Toast.LENGTH_SHORT).show();
+                                                        loadingBar.dismiss();
+                                                    } else {
+                                                        String message = task.getException().getMessage();
+                                                        Toast.makeText(SetupActivity.this, "Error: " + message, Toast.LENGTH_SHORT).show();
+                                                        loadingBar.dismiss();
+                                                    }
+                                                }
+                                            });
+                                }
+                            });
                         }
                     }
                 });
             }
-            else
-            {
-                Toast.makeText(this, "Error Occured: Image can not be cropped. Try Again.", Toast.LENGTH_SHORT).show();
+            else {
+                Toast.makeText(SetupActivity.this, "Error Occured: Image can not be cropped. Try Again.", Toast.LENGTH_SHORT).show();
                 loadingBar.dismiss();
             }
         }

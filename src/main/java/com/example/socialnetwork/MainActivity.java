@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         UsersRef = FirebaseDatabase.getInstance().getReference().child("Users");
         PostsRef = FirebaseDatabase.getInstance().getReference().child("Posts");
 
-        AddNewPostButton = (ImageButton) findViewById(R.id.add_new_post_button);
+        AddNewPostButton =  findViewById(R.id.add_new_post_button);
 
         mToolBar =  findViewById(R.id.main_page_toolbar);
         setSupportActionBar(mToolBar);
@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 postsViewHolder.setFullname(posts.getFullname());
                 postsViewHolder.setDescription(posts.getDescription());
                 postsViewHolder.setProfileImage(getApplicationContext(),posts.getProfileimage());
+                //Toast.makeText(MainActivity.this, posts.getPostimage(),Toast.LENGTH_LONG).show();
                 postsViewHolder.setPostImage(getApplicationContext(),posts.getPostimage());
                 postsViewHolder.setDate(posts.getDate());
                 postsViewHolder.SetTime(posts.getTime());
