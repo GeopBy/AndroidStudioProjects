@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -21,6 +22,8 @@ public class ClickPostActivity extends AppCompatActivity {
     private TextView PostDescription;
     private Button DeletePostButton,EditPostButton;
     private DatabaseReference clickPostRef;
+    private FirebaseAuth mAuth;
+
 
     private String PostKey;
     @Override
@@ -28,6 +31,7 @@ public class ClickPostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_click_post);
 
+        mAuth=FirebaseAuth.getInstance();
         PostKey=getIntent().getExtras().get("PostKey").toString();
         clickPostRef= FirebaseDatabase.getInstance().getReference().child("Posts").child(PostKey);
         PostImage=findViewById(R.id.click_post_image);
