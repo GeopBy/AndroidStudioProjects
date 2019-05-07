@@ -296,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this,"Messages",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.nav_settings:
-                Toast.makeText(this,"Settings",Toast.LENGTH_SHORT).show();
+                SendUserToSettingActivity();
                 break;
             case R.id.nav_logout:
                 mAuth.signOut();
@@ -304,4 +304,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+    private void SendUserToSettingActivity() {
+        Intent loginIntent=new Intent(MainActivity.this,SettingActivity.class);
+        startActivity(loginIntent);
+
+    }
+
 }
