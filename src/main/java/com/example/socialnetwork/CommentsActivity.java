@@ -12,6 +12,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -39,10 +41,11 @@ public class CommentsActivity extends AppCompatActivity {
         mAuth= FirebaseAuth.getInstance();
         current_user_id=mAuth.getCurrentUser().getUid();
         UsersRef= FirebaseDatabase.getInstance().getReference().child("Users");
-        PostsRef= FirebaseDatabase.getInstance().getReference().child("Posts");
-
-
         Post_Key=getIntent().getExtras().get("PostKey").toString();
+        PostsRef= FirebaseDatabase.getInstance().getReference().child("Posts").child(Post_Key).child("Comments");
+
+
+
         CommentsList=findViewById(R.id.comments_list);
         CommentsList.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager=new LinearLayoutManager(this);
@@ -95,7 +98,19 @@ public class CommentsActivity extends AppCompatActivity {
             commentsMap.put("date",saveCurrentDate);
             commentsMap.put("time",saveCurrentTime);
             commentsMap.put("username",userName);
+            PostsRef.child(RandomKey).updateChildren(commentsMap)
+                    .addOnCompleteListener(new OnCompleteListener() {
+                        @Override
+                        public void onComplete(@NonNull Task task) {
+                            if(task.isSuccessful()){
+                                Toast.makeText(CommentsActivity.this,"Successful",Toast.LENGTH_SHORT).show();
+                            }
+                            else{
+                                Toast.makeText(CommentsActivity.this,"Error",Toast.LENGTH_SHORT).show();
 
+                            }
+                        }
+                    });
         }
     }
 }
