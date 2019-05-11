@@ -7,11 +7,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -20,6 +25,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import org.w3c.dom.Comment;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -65,6 +72,7 @@ public class CommentsActivity extends AppCompatActivity {
                         if(dataSnapshot.exists()){
                             String userName=dataSnapshot.child("username").getValue().toString();
                             ValidateComment(userName);
+                            CommentInputText.setText("");
                         }
                     }
 
@@ -75,6 +83,63 @@ public class CommentsActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseRecyclerOptions<Comments> options = new FirebaseRecyclerOptions.Builder<Comments>().setQuery(PostsRef, Comments.class).build();
+        FirebaseRecyclerAdapter firebaseRecyclerAdapter = new FirebaseRecyclerAdapter<Comments, CommentsViewHolder>(options) {
+            @Override
+            protected void onBindViewHolder(@NonNull CommentsViewHolder commentsViewHolder, int position, @NonNull Comments comments) {
+                commentsViewHolder.setUsername(comments.getUsername());
+                commentsViewHolder.setComment(comments.getComment());
+                commentsViewHolder.setDate(comments.getDate());
+                commentsViewHolder.setTime(comments.getTime());
+
+            }
+
+            @NonNull
+            @Override
+            public CommentsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View view = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.all_comments_layout,parent,false);
+                return new CommentsViewHolder(view);
+            }
+        };
+        firebaseRecyclerAdapter.startListening();
+        CommentsList.setAdapter(firebaseRecyclerAdapter);
+    }
+
+    public static class CommentsViewHolder extends RecyclerView.ViewHolder{
+        View mView;
+        public CommentsViewHolder(View itemView){
+            super(itemView);
+            mView=itemView;
+        }
+
+        public void setComment(String comment) {
+            TextView myComment=mView.findViewById(R.id.comment_text);
+            myComment.setText(comment);
+        }
+
+
+        public void setDate(String date) {
+            TextView myDate=mView.findViewById(R.id.comment_date);
+            myDate.setText(" Date: "+date);
+        }
+
+
+
+        public void setTime(String time) {
+            TextView myTime=mView.findViewById(R.id.comment_time);
+            myTime.setText(" Time: "+time);
+        }
+
+        public void setUsername(String username) {
+            TextView myUserName=mView.findViewById(R.id.comment_username);
+            myUserName.setText("@"+username+ "   " );
+        }
     }
 
     private void ValidateComment(String userName) {
@@ -88,8 +153,8 @@ public class CommentsActivity extends AppCompatActivity {
             final String saveCurrentDate=currentDate.format(calFordDate.getTime());
 
             Calendar calFordTime=Calendar.getInstance();
-            SimpleDateFormat currentTime=new SimpleDateFormat("HH:mm");
-            final String saveCurrentTime=currentDate.format(calFordDate.getTime());
+            SimpleDateFormat currentTime=new SimpleDateFormat("HH:mm:ss");
+            final String saveCurrentTime=currentTime.format(calFordDate.getTime());
 
             final String RandomKey=current_user_id+saveCurrentDate+saveCurrentTime;
             HashMap commentsMap=new HashMap();

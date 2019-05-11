@@ -254,8 +254,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void setProfileImage (Context ctx, String profileimage){
-           CircleImageView image = (CircleImageView) mView.findViewById(R.id.post_profile_image);
-           Picasso.get().load(profileimage).into(image);
+            CircleImageView image = (CircleImageView) mView.findViewById(R.id.post_profile_image);
+            Picasso.get().load(profileimage).into(image);
         }
 
         public void SetTime (String time){
