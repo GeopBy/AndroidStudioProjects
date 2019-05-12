@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -26,14 +27,16 @@ public class PersonProfileActivity extends AppCompatActivity {
     private DatabaseReference profileUserRef,UsersRef;
     private FirebaseAuth mAuth;
 
-    private String currentUserId,receiverUserId;
+    private String senderUserId,receiverUserId,CURRENT_STATE;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_person_profile);
 
         mAuth=FirebaseAuth.getInstance();
+        senderUserId=mAuth.getCurrentUser().getUid();
         receiverUserId=getIntent().getExtras().get("visit_user_id").toString();
+
         UsersRef= FirebaseDatabase.getInstance().getReference().child("Users");
 
         IntializeFields();
@@ -67,6 +70,22 @@ public class PersonProfileActivity extends AppCompatActivity {
 
             }
         });
+        // xác nhận để enable button lời mời kết bạn
+        DeclineFriendReqButton.setVisibility(View.INVISIBLE);
+        DeclineFriendReqButton.setEnabled(false);
+        if(!senderUserId.equals(receiverUserId)){
+            SendFriendReqButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                     SendFriendReqButton.setEnabled(false);
+                }
+            });
+        }
+        else{
+            DeclineFriendReqButton.setVisibility(View.INVISIBLE);
+            SendFriendReqButton.setVisibility(View.INVISIBLE);
+        }
+
     }
 
     private void IntializeFields() {
@@ -82,5 +101,6 @@ public class PersonProfileActivity extends AppCompatActivity {
         SendFriendReqButton=findViewById(R.id.person_send_friend_request_btn);
         DeclineFriendReqButton=findViewById(R.id.person_decline_friend_request_btn);
 
+        CURRENT_STATE="not_friends";
     }
 }
