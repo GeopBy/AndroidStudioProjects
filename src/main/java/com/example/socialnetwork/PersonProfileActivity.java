@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -17,6 +19,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.text.DecimalFormat;
+
 public class PersonProfileActivity extends AppCompatActivity {
 
     private TextView userName, userProfName,userStatus,userCountry,userGender,userRelation,userDOB;
@@ -24,7 +28,7 @@ public class PersonProfileActivity extends AppCompatActivity {
 
     private Button SendFriendReqButton,DeclineFriendReqButton;
 
-    private DatabaseReference profileUserRef,UsersRef;
+    private DatabaseReference FriendRequestRef,UsersRef;
     private FirebaseAuth mAuth;
 
     private String senderUserId,receiverUserId,CURRENT_STATE;
@@ -38,30 +42,33 @@ public class PersonProfileActivity extends AppCompatActivity {
         receiverUserId=getIntent().getExtras().get("visit_user_id").toString();
 
         UsersRef= FirebaseDatabase.getInstance().getReference().child("Users");
+        FriendRequestRef= FirebaseDatabase.getInstance().getReference().child("FriendRequests");
 
         IntializeFields();
+        //UsersRef.child(receiverUserId);
         UsersRef.child(receiverUserId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    String myProfileImage=dataSnapshot.child("profileimage").getValue().toString();
-                    String myUserName=dataSnapshot.child("username").getValue().toString();
-                    String myProfileName=dataSnapshot.child("fullname").getValue().toString();
-                    String myProfileStatus=dataSnapshot.child("status").getValue().toString();
-                    String myDOB=dataSnapshot.child("dob").getValue().toString();
-                    String myCountry=dataSnapshot.child("country").getValue().toString();
-                    String myGender=dataSnapshot.child("gender").getValue().toString();
-                    String myRelationStatus=dataSnapshot.child("relationshipstatus").getValue().toString();
+                if (dataSnapshot.exists()) {
+                    String myProfileImage = dataSnapshot.child("profileimage").getValue().toString();
+                    String myUserName = dataSnapshot.child("username").getValue().toString();
+                    String myProfileName = dataSnapshot.child("fullname").getValue().toString();
+                    String myProfileStatus = dataSnapshot.child("status").getValue().toString();
+                    String myDOB = dataSnapshot.child("dob").getValue().toString();
+                    String myCountry = dataSnapshot.child("country").getValue().toString();
+                    String myGender = dataSnapshot.child("gender").getValue().toString();
+                    String myRelationStatus = dataSnapshot.child("relationshipstatus").getValue().toString();
 
                     Picasso.get().load(myProfileImage).placeholder(R.drawable.profile).into(userProfileImage);
 
-                    userName.setText("@"+myUserName);
+                    userName.setText("@" + myUserName);
                     userProfName.setText(myProfileName);
                     userStatus.setText(myProfileStatus);
-                    userDOB.setText("DOB: "+myDOB);
-                    userCountry.setText("Country: "+myCountry);
-                    userGender.setText("Gender: "+myGender);
-                    userRelation.setText("RelationShip: "+myRelationStatus);
+                    userDOB.setText("DOB: " + myDOB);
+                    userCountry.setText("Country: " + myCountry);
+                    userGender.setText("Gender: " + myGender);
+                    userRelation.setText("RelationShip: " + myRelationStatus);
+                    MaintananceofButton();
                 }
             }
 
@@ -78,6 +85,9 @@ public class PersonProfileActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                      SendFriendReqButton.setEnabled(false);
+                     if(CURRENT_STATE.equals("not_friends")){
+                         SendFriendRequestToaPerson();
+                     }
                 }
             });
         }
@@ -86,6 +96,62 @@ public class PersonProfileActivity extends AppCompatActivity {
             SendFriendReqButton.setVisibility(View.INVISIBLE);
         }
 
+    }
+
+    private void MaintananceofButton() {
+        FriendRequestRef.child(senderUserId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.hasChild(receiverUserId))
+                        {
+
+                            String request_type=dataSnapshot.child(receiverUserId)
+                                    .child("request_type").getValue().toString();
+
+                            if(request_type.equals("sent"))
+                            {
+                                CURRENT_STATE="request_sent";
+                                SendFriendReqButton.setText("Cancel Friend Request");
+                                DeclineFriendReqButton.setVisibility(View.INVISIBLE);
+                                DeclineFriendReqButton.setEnabled(false);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+    }
+
+    private void SendFriendRequestToaPerson() {
+        FriendRequestRef.child(senderUserId).child(receiverUserId)
+                .child("request_type").setValue("sent")
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            FriendRequestRef.child(receiverUserId).child(senderUserId)
+                                    .child("request_type").setValue("received")
+                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            if(task.isSuccessful()){
+                                                SendFriendReqButton.setEnabled((true));
+                                                CURRENT_STATE="request_sent";
+
+                                                SendFriendReqButton.setText("Cancle friend Request");
+
+                                                DeclineFriendReqButton.setVisibility(View.INVISIBLE);
+                                                DeclineFriendReqButton.setEnabled(false);
+                                            }
+                                        }
+                                    });
+                        }
+                    }
+                });
     }
 
     private void IntializeFields() {
