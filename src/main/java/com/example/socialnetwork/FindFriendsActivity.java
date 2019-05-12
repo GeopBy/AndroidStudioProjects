@@ -73,7 +73,7 @@ public class FindFriendsActivity extends AppCompatActivity {
                 setQuery(searchPeopleAndFriendsQuery, FindFriends.class).build();
         FirebaseRecyclerAdapter<FindFriends, FindFriendsViewHolder> adapter=new FirebaseRecyclerAdapter<FindFriends, FindFriendsViewHolder>(options) {
             @Override
-            protected void onBindViewHolder(@NonNull FindFriendsViewHolder findFriendsViewHolder, int position, @NonNull FindFriends findFriends) {
+            protected void onBindViewHolder(@NonNull FindFriendsViewHolder findFriendsViewHolder, final int position, @NonNull FindFriends findFriends) {
                 final String PostKey = getRef(position).getKey();
                 findFriendsViewHolder.setFullname(findFriends.getFullname());
                 findFriendsViewHolder.setStatus(findFriends.getStatus());
@@ -83,10 +83,10 @@ public class FindFriendsActivity extends AppCompatActivity {
                 findFriendsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent findFriendsIntent = new Intent(FindFriendsActivity.this, FindFriendsActivity.class);
-                        findFriendsIntent.putExtra("PostKey", PostKey);
-                        startActivity(findFriendsIntent);
-
+                      String visit_user_id=getRef(position).getKey();
+                      Intent profileIntent=new Intent(FindFriendsActivity.this,PersonProfileActivity.class);
+                      profileIntent.putExtra("visit_user_id",visit_user_id);
+                      startActivity(profileIntent);
                     }
                 });
 
