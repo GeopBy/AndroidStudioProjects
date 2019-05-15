@@ -4,7 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import de.hdodenhof.circleimageview.CircleImageView;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -20,10 +23,13 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView userName, userProfName,userStatus,userCountry,userGender,userRelation,userDOB;
     private CircleImageView userProfileImage;
 
-    private DatabaseReference profileUserRef;
+    private DatabaseReference profileUserRef, FriendsRef,PostsRef;
     private FirebaseAuth mAuth;
+    private Button MyPosts,MyFriends;
 
     private String currentUserId;
+
+    private int countFriends=0,countPosts=0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,6 +38,10 @@ public class ProfileActivity extends AppCompatActivity {
         mAuth=FirebaseAuth.getInstance();
         currentUserId=mAuth.getCurrentUser().getUid();
         profileUserRef=FirebaseDatabase.getInstance().getReference().child("Users").child(currentUserId);
+        FriendsRef=FirebaseDatabase.getInstance().getReference().child("Friends");
+        PostsRef=FirebaseDatabase.getInstance().getReference().child("Posts");
+
+
         userProfileImage=findViewById(R.id.my_profile_pic);
         userName=findViewById(R.id.my_username);
         userProfName=findViewById(R.id.my_profile_full_name);
@@ -40,6 +50,58 @@ public class ProfileActivity extends AppCompatActivity {
         userGender=findViewById(R.id.my_gender);
         userRelation=findViewById(R.id.my_relationship_status);
         userDOB=findViewById(R.id.my_dob);
+        MyFriends=findViewById(R.id.my_friends_button);
+        MyPosts=findViewById(R.id.my_post_button);
+
+        MyFriends.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SendUserToFriendsActivity();
+            }
+        });
+        MyPosts.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SendUserToMyPostsActivity();
+            }
+        });
+        PostsRef.orderByChild("uid")
+                .startAt(currentUserId).endAt(currentUserId+"\uf8ff")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.exists()){
+                            countPosts=(int)dataSnapshot.getChildrenCount();
+                            MyPosts.setText((Integer.toString(countPosts)+" Posts"));
+                        }
+                        else{
+                            MyPosts.setText("0 Posts");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+        FriendsRef.child(currentUserId).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    countFriends=(int)dataSnapshot.getChildrenCount();
+                    MyFriends.setText(Integer.toString(countFriends)+" Friends");
+                }
+                else{
+                    MyFriends.setText("0 Friends");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
 
         profileUserRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -71,5 +133,15 @@ public class ProfileActivity extends AppCompatActivity {
 
             }
         });
+    }
+    private void SendUserToFriendsActivity() {
+        Intent friendsIntent=new Intent(ProfileActivity.this,FriendsActivity.class);
+        startActivity(friendsIntent);
+
+    }
+    private void SendUserToMyPostsActivity() {
+        Intent friendsIntent=new Intent(ProfileActivity.this,MyPostsActivity.class);
+        startActivity(friendsIntent);
+
     }
 }

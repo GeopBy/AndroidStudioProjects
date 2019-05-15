@@ -51,9 +51,9 @@ public class ChatActivity extends AppCompatActivity {
 
     private String messageReceiverID, messageReceiverName,messageSenderID,saveCurrentDate,saveCurrentTime;
 
-    private TextView receiverName;
+    private TextView receiverName, userLastSeen;
     private CircleImageView receiverProfileImage;
-    private DatabaseReference RootRef;
+    private DatabaseReference RootRef,UserRef;
     private FirebaseAuth mAuth;
 
     @Override
@@ -64,6 +64,8 @@ public class ChatActivity extends AppCompatActivity {
         mAuth=FirebaseAuth.getInstance();
         messageSenderID=mAuth.getCurrentUser().getUid();
         RootRef= FirebaseDatabase.getInstance().getReference();
+        UserRef= FirebaseDatabase.getInstance().getReference().child("Users");
+
 
         messageReceiverID=getIntent().getExtras().get("visit_user_id").toString();
         messageReceiverName=getIntent().getExtras().get("userName").toString();
@@ -114,6 +116,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void SendMessage() {
+        updateUserStatus("online");
         String messageText=userMessageInput.getText().toString();
         if(TextUtils.isEmpty(messageText)){
             Toast.makeText(this,"please type message first...",Toast.LENGTH_SHORT).show();
@@ -169,6 +172,15 @@ public class ChatActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     final String profileImage=dataSnapshot.child("profileimage").getValue().toString();
+                    final String type=dataSnapshot.child("userState").child("type").getValue().toString();
+                    final String lastDate=dataSnapshot.child("userState").child("date").getValue().toString();
+                    final String lastTime=dataSnapshot.child("userState").child("time").getValue().toString();
+                    if(type.equals("online")){
+                        userLastSeen.setText("online");
+                    }
+                    else{
+                        userLastSeen.setText("last seen "+lastTime+" "+lastDate);
+                    }
                     Picasso.get().load(profileImage).placeholder(R.drawable.profile).into(receiverProfileImage);
                 }
             }
@@ -178,6 +190,24 @@ public class ChatActivity extends AppCompatActivity {
 
             }
         });
+    }
+    public void updateUserStatus(String state){
+        String saveCurrentDate,saveCurrentTime;
+        Calendar calForDate=Calendar.getInstance();
+        SimpleDateFormat currentDate= new SimpleDateFormat("MM dd,yyyy");
+        saveCurrentDate=currentDate.format(calForDate.getTime());
+
+        Calendar calForTime=Calendar.getInstance();
+        SimpleDateFormat currentTime=new SimpleDateFormat("hh:mm a");
+        saveCurrentTime=currentTime.format(calForTime.getTime());
+
+        Map currentStateMap=new HashMap();
+        currentStateMap.put("time",saveCurrentTime);
+        currentStateMap.put("date",saveCurrentDate);
+        currentStateMap.put("type",state);
+
+        UserRef.child(messageSenderID).child("userState")
+                .updateChildren(currentStateMap);
     }
 
     private void IntializeFields() {
@@ -193,6 +223,7 @@ public class ChatActivity extends AppCompatActivity {
         actionBar.setCustomView(action_bar_view);
 
         receiverName=findViewById(R.id.custom_profile_name);
+        userLastSeen=findViewById(R.id.custom_user_last_seen);
         receiverProfileImage=findViewById(R.id.custom_profile_image);
 
         SendMessageButton=findViewById(R.id.send_message_button);

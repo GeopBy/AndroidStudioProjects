@@ -37,6 +37,11 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MainActivity extends AppCompatActivity {
 
     private NavigationView navigationView;
@@ -137,6 +142,24 @@ public class MainActivity extends AppCompatActivity {
         DisplayAllUsersPosts();
 
     }
+    public void updateUserStatus(String state){
+        String saveCurrentDate,saveCurrentTime;
+        Calendar calForDate=Calendar.getInstance();
+        SimpleDateFormat currentDate= new SimpleDateFormat("MM dd,yyyy");
+        saveCurrentDate=currentDate.format(calForDate.getTime());
+
+        Calendar calForTime=Calendar.getInstance();
+        SimpleDateFormat currentTime=new SimpleDateFormat("hh:mm a");
+        saveCurrentTime=currentTime.format(calForTime.getTime());
+
+        Map currentStateMap=new HashMap();
+        currentStateMap.put("time",saveCurrentTime);
+        currentStateMap.put("date",saveCurrentDate);
+        currentStateMap.put("type",state);
+
+        UsersRef.child(currentUserID).child("userState")
+                .updateChildren(currentStateMap);
+    }
 
     //hiển thị bảng tin
     private void DisplayAllUsersPosts() {
@@ -207,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
         };
         adapter.startListening();
         postList.setAdapter(adapter);
+        updateUserStatus("online");
     }
     //lấy dữ liệu từ bảng tin để hiển thị lên
     public static class PostsViewHolder extends RecyclerView.ViewHolder {
@@ -368,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
                 SendUserToSettingActivity();
                 break;
             case R.id.nav_logout:
+                updateUserStatus("offline");
                 mAuth.signOut();
                 SendUserToLoginActivity();
                 break;
